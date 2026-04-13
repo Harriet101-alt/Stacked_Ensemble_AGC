@@ -1,0 +1,27 @@
+{
+  "version": "1.0-demo",
+  "created_at": "2026-04-11T14:18:16.163339",
+  "features": [
+    "clay",
+    "sand",
+    "silt",
+    "elev",
+    "annual_precip",
+    "peat_frac",
+    "Hydraulic_Stress",
+    "NDVI",
+    "precip_clay_interaction"
+  ],
+  "base_models": [
+    "RF",
+    "XGB",
+    "SVR"
+  ],
+  "target": "AGB",
+  "note": "Demo artefacts \u2014 replace with production models from stacking_model.py",
+  "ridge_coefficients": {
+    "RF": 0.3571768759148292,
+    "XGB": 1.066218456791013,
+    "SVR": -0.43205057305021305
+  }
+}
