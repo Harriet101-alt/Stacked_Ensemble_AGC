@@ -12,7 +12,7 @@ InputPayload   — Pydantic model for input validation with domain bounds.
 InferenceEngine — Two-stage prediction pipeline (8 covariates → 3 base
                   predictions → 1 Ridge meta-prediction).
 
-Author : <Your Name>
+Author : Harriet Fletcher
 """
 
 from __future__ import annotations

@@ -9,7 +9,7 @@ Google Earth Engine.
 
     python generate_demo_models.py
 
-Author : <Your Name>
+Author : Harriet Fletcher
 """
 
 from __future__ import annotations

@@ -45,7 +45,7 @@ st.set_page_config(
 # Constants
 # ─────────────────────────────────────────────────────────────
 MODEL_DIR = os.path.join(os.path.dirname(__file__), "saved_models")
-IMAGE_DIR = os.path.join(os.path.dirname(__file__), "images")
+IMAGE_DIR = os.path.join(os.path.dirname(__file__), "Images")
 PLOTLY_TEMPLATE = "simple_white"
 RIMBA_RAYA_LAT = -0.5
 RIMBA_RAYA_LON = 112.5
@@ -301,34 +301,30 @@ html, body, [class*="css"] {
     padding: 18px 22px;
 }
 
-/* ── Radio nav — black text on all inner elements ── */
+/* ── Sidebar — force all text visible on white bg ── */
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] .stRadio label,
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"],
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] .stMarkdown {
+    color: #4B5563 !important;
+}
+
+/* ── Radio nav — charcoal text ── */
 div[data-testid="stRadio"] label,
-div[data-testid="stRadio"] label *,
-div[data-testid="stRadio"] div[role="radiogroup"] label,
-div[data-testid="stRadio"] div[role="radiogroup"] label * {
+[data-testid="stSidebar"] [role="radiogroup"] label,
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label {
     font-weight: 600 !important;
     font-size: 0.84rem !important;
-    color: #000000 !important;
+    color: #374151 !important;
 }
 
-/* ── Toggle / Checkbox — black text (covers all Streamlit versions) ── */
+/* ── Toggle ── */
 div[data-testid="stToggle"] label,
-div[data-testid="stToggle"] label *,
-div[data-testid="stToggle"] span,
-div[data-testid="stToggle"] p,
-div[data-testid="stCheckbox"] label,
-div[data-testid="stCheckbox"] label *,
-div[data-testid="stCheckbox"] span,
-div[data-testid="stCheckbox"] p {
+[data-testid="stSidebar"] [data-testid="stToggle"] label {
     font-size: 0.82rem !important;
-    color: #000000 !important;
-}
-
-/* ── Sidebar widget labels — catch-all for any missed labels ── */
-[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
-[data-testid="stSidebar"] [data-testid="stWidgetLabel"] span,
-[data-testid="stSidebar"] [data-testid="stWidgetLabel"] label {
-    color: #000000 !important;
+    color: #6B7280 !important;
 }
 
 /* ── Expander ── */
@@ -447,9 +443,6 @@ def _init_session_state() -> None:
         "live_telemetry": {},
         "_last_payload_hash": None,
         "_prev_live_mode": False,
-        "_soil_clay": 35.0,
-        "_soil_sand": 25.0,
-        "_soil_silt": 40.0,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -465,39 +458,6 @@ def _load_engine() -> InferenceEngine:
     engine = InferenceEngine(MODEL_DIR)
     engine.load()
     return engine
-
-
-# ─────────────────────────────────────────────────────────────
-# Soil-texture constraint: clay + sand + silt = 100%
-# ─────────────────────────────────────────────────────────────
-
-def _adjust_soil_texture(changed: str) -> None:
-    """When one soil slider moves, redistribute the remainder proportionally."""
-    keys = ["clay", "sand", "silt"]
-    state_key = f"_soil_{changed}"
-    new_val = st.session_state[state_key]
-    remaining = round(100.0 - new_val, 1)
-
-    others = [k for k in keys if k != changed]
-    other_vals = [st.session_state[f"_soil_{k}"] for k in others]
-    other_sum = sum(other_vals)
-
-    if other_sum > 0:
-        # Proportional split — round the first, give remainder to the second
-        ratio = other_vals[0] / other_sum
-        val_0 = round(round(remaining * ratio / 0.5) * 0.5, 1)
-        val_1 = round(remaining - val_0, 1)
-    else:
-        # Both others are zero — split evenly
-        val_0 = round(round(remaining / 2.0 / 0.5) * 0.5, 1)
-        val_1 = round(remaining - val_0, 1)
-
-    # Clamp to slider range
-    val_0 = max(0.0, min(100.0, val_0))
-    val_1 = max(0.0, min(100.0 - val_0, val_1))
-
-    st.session_state[f"_soil_{others[0]}"] = val_0
-    st.session_state[f"_soil_{others[1]}"] = val_1
 
 
 # ─────────────────────────────────────────────────────────────
@@ -633,33 +593,23 @@ class PremiumBiomassApp:
 
             with st.expander("Soil Texture", expanded=True):
                 clay = st.slider(
-                    "Clay (%)", 0.0, 100.0,
-                    st.session_state["_soil_clay"], 0.5,
-                    key="_soil_clay",
-                    on_change=_adjust_soil_texture, args=("clay",),
+                    "Clay (%)", 0.0, 100.0, 35.0, 0.5,
                     help="Percentage of clay particles in the topsoil. "
                          "Higher clay increases water retention and "
                          "waterlogging risk.",
                 )
                 sand = st.slider(
-                    "Sand (%)", 0.0, 100.0,
-                    st.session_state["_soil_sand"], 0.5,
-                    key="_soil_sand",
-                    on_change=_adjust_soil_texture, args=("sand",),
+                    "Sand (%)", 0.0, 100.0, 25.0, 0.5,
                     help="Percentage of sand in the topsoil. "
                          "Sandy soils drain quickly and retain fewer "
                          "nutrients.",
                 )
                 silt = st.slider(
-                    "Silt (%)", 0.0, 100.0,
-                    st.session_state["_soil_silt"], 0.5,
-                    key="_soil_silt",
-                    on_change=_adjust_soil_texture, args=("silt",),
+                    "Silt (%)", 0.0, 100.0, 40.0, 0.5,
                     help="Percentage of silt in the topsoil. "
                          "Silt contributes to fertility and moderate "
                          "drainage.",
                 )
-                st.caption(f"Total: {clay + sand + silt:.1f}%")
 
             with st.expander("Hydrology & Topography", expanded=True):
                 elev_default = float(telem.get("elev", 12.0))
@@ -1569,25 +1519,25 @@ class PremiumBiomassApp:
             stacked_rgba = hex_to_rgba(COLORS["Stacked"], 0.28)
 
             fig = go.Figure(go.Sankey(
-                arrangement="snap",
+                arrangement="fixed",
                 node=dict(
                     label=[
-                        "Soil Texture",            # 0
-                        "Elevation",               # 1
-                        "Precip / Peat / NDVI",    # 2
-                        "Hyd. Stress",             # 3
+                        "Clay, Sand, Silt",      # 0
+                        "Elevation",              # 1
+                        "Precip, Peat, NDVI",     # 2
+                        "Hydraulic Stress",        # 3
                         "Precip x Clay",           # 4
                         "Random Forest",           # 5
                         "XGBoost",                 # 6
                         "SVR",                     # 7
-                        "Ridge Meta",              # 8
-                        "AGB (Mg/ha)",             # 9
+                        "Ridge Meta-Model",        # 8
+                        "AGB  Mg/ha",              # 9
                     ],
                     x=[0.01, 0.01, 0.01, 0.01, 0.01,
-                       0.38, 0.38, 0.38,
-                       0.72, 0.99],
-                    y=[0.05, 0.25, 0.45, 0.65, 0.90,
-                       0.05, 0.50, 0.95,
+                       0.30, 0.30, 0.30,
+                       0.62, 0.95],
+                    y=[0.08, 0.27, 0.46, 0.65, 0.84,
+                       0.12, 0.50, 0.88,
                        0.50, 0.50],
                     color=[
                         "#F3F4F6", "#F3F4F6", "#F3F4F6",
@@ -1599,8 +1549,13 @@ class PremiumBiomassApp:
                         "#F3F4F6",
                     ],
                     line=dict(color="#E5E7EB", width=1),
-                    pad=50,
-                    thickness=14,
+                    pad=40,
+                    thickness=16,
+                ),
+                textfont=dict(
+                    family="Inter, sans-serif",
+                    size=12,
+                    color="#000000",
                 ),
                 link=dict(
                     source=[
@@ -1637,52 +1592,32 @@ class PremiumBiomassApp:
                 font=dict(
                     family="Inter, sans-serif",
                     size=11,
-                    color="#000000",
+                    color="#111827",
                 ),
-                margin=dict(t=20, b=20, l=10, r=10),
-                height=500,
+                margin=dict(t=10, b=10, l=10, r=30),
+                height=420,
             )
             st.plotly_chart(
                 fig, use_container_width=True,
                 config={"displayModeBar": False},
             )
 
-        # Model metrics table — loaded from metadata.json
+        # Model metrics table
         st.markdown("")
         st.markdown(
             "<p class='section-title'>"
             "Published Performance Metrics</p>",
             unsafe_allow_html=True,
         )
-        _display_names = {
-            "RF": "Random Forest", "XGB": "XGBoost",
-            "SVR": "SVR", "Stacked": "Stacked Ensemble",
+        metrics_data = {
+            "Model": [
+                "Random Forest", "XGBoost", "SVR",
+                "Stacked Ensemble",
+            ],
+            "R2": [0.872, 0.884, 0.831, 0.913],
+            "RMSE (Mg/ha)": [28.4, 26.9, 33.7, 22.1],
+            "MAE (Mg/ha)": [19.2, 18.4, 24.1, 15.8],
         }
-        _meta_metrics = self.engine.metadata.get("metrics", {})
-        if _meta_metrics:
-            _models, _r2, _rmse, _mae = [], [], [], []
-            for key in ["RF", "XGB", "SVR", "Stacked"]:
-                if key in _meta_metrics:
-                    _models.append(_display_names.get(key, key))
-                    _r2.append(_meta_metrics[key]["r2"])
-                    _rmse.append(_meta_metrics[key]["rmse"])
-                    _mae.append(_meta_metrics[key]["mae"])
-            metrics_data = {
-                "Model": _models,
-                "R2": _r2,
-                "RMSE (Mg/ha)": _rmse,
-                "MAE (Mg/ha)": _mae,
-            }
-        else:
-            metrics_data = {
-                "Model": [
-                    "Random Forest", "XGBoost", "SVR",
-                    "Stacked Ensemble",
-                ],
-                "R2": [0.872, 0.884, 0.831, 0.913],
-                "RMSE (Mg/ha)": [28.4, 26.9, 33.7, 22.1],
-                "MAE (Mg/ha)": [19.2, 18.4, 24.1, 15.8],
-            }
         st.dataframe(
             pd.DataFrame(metrics_data).style.format({
                 "R2": "{:.3f}",
@@ -1830,43 +1765,42 @@ class PremiumBiomassApp:
 
         with col_theory:
             st.markdown(
-                "<div class='tremor-card'>"
-                f"<div style='font-size: 0.95rem; font-weight: 700;"
-                f" color: {COLORS['positive']}; margin-bottom: 12px;'>"
+                "<div class='dark-module'>"
+                "<div style='font-size: 0.95rem; font-weight: 700;"
+                " color: #10B981; margin-bottom: 12px;'>"
                 "Why Does This Interaction Matter?</div>"
-                f"<div style='font-size: 0.9rem;"
-                f" color: {COLORS['text_body']}; line-height: 1.7;"
+                "<div style='font-size: 0.9rem;"
+                " color: #D1D5DB; line-height: 1.7;"
                 " margin-bottom: 14px;'>"
                 "In tropical peat-swamp forests, precipitation alone"
                 " is a poor predictor of AGB. High rainfall in"
-                " <em>well-drained sandy soils</em>"
+                " <em style='color: #6EE7B7;'>well-drained sandy soils</em>"
                 " rapidly leaches nutrients and dries out, suppressing"
                 " biomass. The same rainfall volume in"
-                " <em>clay-rich soils</em>"
+                " <em style='color: #6EE7B7;'>clay-rich soils</em>"
                 " produces persistent waterlogging &mdash; raising the"
                 " water table and dramatically altering decomposition"
                 " rates and root architecture."
                 "</div>"
-                f"<div style='font-size: 0.9rem; font-weight: 700;"
-                f" color: {COLORS['positive']}; margin-bottom: 8px;'>"
-                "Formula</div>"
+                "<div style='font-size: 0.9rem; font-weight: 700;"
+                " color: #10B981; margin-bottom: 8px;'>Formula</div>"
                 "<div style='font-family: monospace; font-size: 0.9rem;"
-                " background: #F3F4F6; padding: 10px 14px;"
+                " background: #1F2937; padding: 10px 14px;"
                 " border-radius: 8px; border-left: 3px solid #10B981;"
-                f" color: {COLORS['text_primary']}; margin-bottom: 14px;'>"
+                " color: #6EE7B7; margin-bottom: 14px;'>"
                 "precip_clay_interaction = annual_precip &times; clay"
                 "</div>"
-                f"<div style='font-size: 0.9rem;"
-                f" color: {COLORS['text_body']}; line-height: 1.7;'>"
-                f"<strong style='color: {COLORS['text_primary']};'>"
+                "<div style='font-size: 0.9rem;"
+                " color: #D1D5DB; line-height: 1.7;'>"
+                "<strong style='color: #F9FAFB;'>"
                 "Regime classification:</strong><br>"
-                f"<span style='color: {COLORS['positive']};'>"
+                "<span style='color: #10B981;'>"
                 "&#10003; Low  (&lt;20,000)</span>"
                 " &mdash; Arid or sandy; minimal waterlogging<br>"
-                f"<span style='color: {COLORS['warning']};'>"
+                "<span style='color: #F59E0B;'>"
                 "&#9888; Moderate (20k-100k)</span>"
                 " &mdash; Transitional; partial peat inundation<br>"
-                f"<span style='color: {COLORS['alert']};'>"
+                "<span style='color: #EF4444;'>"
                 "&#9888; High  (&gt;100,000)</span>"
                 " &mdash; Deep peat domes; anaerobic conditions"
                 "</div>"
@@ -1942,26 +1876,26 @@ class PremiumBiomassApp:
                 config={"displayModeBar": False},
             )
 
-        # Literature citation block
+        # Literature citation block — dark themed
         st.markdown("")
         st.markdown(
-            "<div class='tremor-card' style='border-left: 3px solid"
-            f" {COLORS['SVR']};'>"
-            f"<div style='font-size: 0.84rem; font-weight: 700;"
-            f" color: {COLORS['SVR']}; margin-bottom: 8px;'>"
+            "<div class='dark-card' style='border-left: 3px solid"
+            " #10B981;'>"
+            "<div style='font-size: 0.84rem; font-weight: 700;"
+            " color: #10B981; margin-bottom: 8px;'>"
             "Scientific Literature Context</div>"
-            f"<div style='font-size: 0.88rem;"
-            f" color: {COLORS['text_body']}; line-height: 1.65;'>"
+            "<div style='font-size: 0.88rem;"
+            " color: #9CA3AF; line-height: 1.65;'>"
             "This interaction approach aligns with"
-            " <em>Hastie et al. (2009)</em>"
+            " <em style='color: #D1D5DB;'>Hastie et al. (2009)</em>"
             " &mdash; multiplicative interaction terms are essential"
             " when two covariates jointly control a non-linear outcome."
             " In the context of tropical peat forests,"
-            " <em>Page et al. (2011)</em>"
+            " <em style='color: #D1D5DB;'>Page et al. (2011)</em>"
             " documented that waterlogging-driven anaerobic decomposition"
             " is a primary determinant of peat depth and therefore AGB"
             " standing stock. The"
-            " <em>MPI Biomass Modelling"
+            " <em style='color: #D1D5DB;'>MPI Biomass Modelling"
             " Framework</em> similarly recommends soil-hydrology"
             " interaction features for any AGB model operating in"
             " inundation-prone biomes."
