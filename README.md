@@ -134,13 +134,4 @@ The `InferenceEngine` is loaded **once per Streamlit session** via
 
 ---
 
-## Interview Talking Points
-
-- **Why stacking?** Reduces variance by combining diverse learners with different inductive biases (trees, gradient boosting, kernel methods).
-- **Why OOF predictions for the meta-model?** Prevents the meta-learner from seeing labels it was trained on — equivalent to a second layer of cross-validation.
-- **Why Ridge as the meta-learner?** L2 regularisation prevents the meta-model from overfitting to idiosyncratic base model errors; coefficients are interpretable.
-- **Why `precip_clay_interaction`?** Clay-rich soils with high precipitation create waterlogging conditions that suppress fine-root respiration and indirectly affect AGB accumulation.
-
----
-
 *Built for the Rimba Raya Carbon Concession Dissertation Project.*
