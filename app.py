@@ -849,7 +849,7 @@ class PremiumBiomassApp:
                 )
                 st.image(
                     map_path,
-                    use_container_width=True,
+                    width='stretch',
                     caption="Rimba Raya, Central Kalimantan, Indonesia",
                 )
                 st.markdown("</div>", unsafe_allow_html=True)
@@ -1084,7 +1084,7 @@ class PremiumBiomassApp:
             ),
         )
         st.plotly_chart(
-            fig, use_container_width=True,
+            fig, width='stretch',
             config={"displayModeBar": False},
         )
 
@@ -1159,7 +1159,7 @@ class PremiumBiomassApp:
             ),
         )
         st.plotly_chart(
-            fig, use_container_width=True,
+            fig, width='stretch',
             config={"displayModeBar": False},
         )
 
@@ -1284,7 +1284,7 @@ class PremiumBiomassApp:
             ),
         )
         st.plotly_chart(
-            fig, use_container_width=True,
+            fig, width='stretch',
             config={"displayModeBar": False},
         )
 
@@ -1361,16 +1361,21 @@ class PremiumBiomassApp:
             inplace=True,
         )
 
-        st.dataframe(
-            df_display.style.format({
-                "Stacked (Mg/ha)": "{:.1f}", "RF": "{:.1f}",
-                "XGB": "{:.1f}", "SVR": "{:.1f}",
-                "clay": "{:.1f}", "annual_precip": "{:.0f}",
-                "peat_frac": "{:.2f}", "NDVI": "{:.2f}",
-            }).background_gradient(
+        _fmt_vault = {
+            "Stacked (Mg/ha)": "{:.1f}", "RF": "{:.1f}",
+            "XGB": "{:.1f}", "SVR": "{:.1f}",
+            "clay": "{:.1f}", "annual_precip": "{:.0f}",
+            "peat_frac": "{:.2f}", "NDVI": "{:.2f}",
+        }
+        try:
+            _styled_vault = df_display.style.format(_fmt_vault).background_gradient(
                 subset=["Stacked (Mg/ha)"], cmap="Greens"
-            ),
-            use_container_width=True,
+            )
+        except ImportError:
+            _styled_vault = df_display.style.format(_fmt_vault)
+        st.dataframe(
+            _styled_vault,
+            width='stretch',
             height=min(350, 60 + len(df_vault) * 40),
         )
 
@@ -1420,7 +1425,7 @@ class PremiumBiomassApp:
                 ),
             )
             st.plotly_chart(
-                fig, use_container_width=True,
+                fig, width='stretch',
                 config={"displayModeBar": False},
             )
 
@@ -1601,7 +1606,7 @@ class PremiumBiomassApp:
                 height=420,
             )
             st.plotly_chart(
-                fig, use_container_width=True,
+                fig, width='stretch',
                 config={"displayModeBar": False},
             )
 
@@ -1621,13 +1626,18 @@ class PremiumBiomassApp:
             "RMSE (Mg/ha)": [28.4, 26.9, 33.7, 22.1],
             "MAE (Mg/ha)": [19.2, 18.4, 24.1, 15.8],
         }
+        _fmt_metrics = {"R2": "{:.3f}", "RMSE (Mg/ha)": "{:.1f}", "MAE (Mg/ha)": "{:.1f}"}
+        try:
+            _styled_metrics = (
+                pd.DataFrame(metrics_data)
+                .style.format(_fmt_metrics)
+                .background_gradient(subset=["R2"], cmap="Greens")
+            )
+        except ImportError:
+            _styled_metrics = pd.DataFrame(metrics_data).style.format(_fmt_metrics)
         st.dataframe(
-            pd.DataFrame(metrics_data).style.format({
-                "R2": "{:.3f}",
-                "RMSE (Mg/ha)": "{:.1f}",
-                "MAE (Mg/ha)": "{:.1f}",
-            }).background_gradient(subset=["R2"], cmap="Greens"),
-            use_container_width=True,
+            _styled_metrics,
+            width='stretch',
             hide_index=True,
         )
 
@@ -1701,7 +1711,7 @@ class PremiumBiomassApp:
             ),
         )
         st.plotly_chart(
-            fig, use_container_width=True,
+            fig, width='stretch',
             config={"displayModeBar": False},
         )
 
@@ -1875,7 +1885,7 @@ class PremiumBiomassApp:
                 ),
             )
             st.plotly_chart(
-                fig, use_container_width=True,
+                fig, width='stretch',
                 config={"displayModeBar": False},
             )
 
