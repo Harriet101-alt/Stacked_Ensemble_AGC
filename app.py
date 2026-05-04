@@ -443,6 +443,7 @@ def _init_session_state() -> None:
         "live_telemetry": {},
         "_last_payload_hash": None,
         "_prev_live_mode": False,
+        "_soil_clay": 35.0,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -593,7 +594,9 @@ class PremiumBiomassApp:
 
             with st.expander("Soil Texture", expanded=True):
                 clay = st.slider(
-                    "Clay (%)", 0.0, 100.0, 35.0, 0.5,
+                    "Clay (%)", 0.0, 100.0,
+                    step=0.5,
+                    key="_soil_clay",
                     help="Percentage of clay particles in the topsoil. "
                          "Higher clay increases water retention and "
                          "waterlogging risk.",
