@@ -430,6 +430,38 @@ def _fetch_live_telemetry(lat: float, lon: float) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────
+# Soil texture slider callbacks — keep clay+sand+silt == 100
+# ─────────────────────────────────────────────────────────────
+
+def _redistribute_soil(changed_key: str) -> None:
+    keys = ["_soil_clay", "_soil_sand", "_soil_silt"]
+    other_keys = [k for k in keys if k != changed_key]
+    remainder = 100.0 - st.session_state[changed_key]
+    a = st.session_state[other_keys[0]]
+    b = st.session_state[other_keys[1]]
+    total_other = a + b
+    if total_other == 0:
+        st.session_state[other_keys[0]] = round(remainder / 2, 1)
+        st.session_state[other_keys[1]] = round(remainder / 2, 1)
+    else:
+        new_a = round(a / total_other * remainder, 1)
+        st.session_state[other_keys[0]] = new_a
+        st.session_state[other_keys[1]] = round(remainder - new_a, 1)
+
+
+def _on_clay_change() -> None:
+    _redistribute_soil("_soil_clay")
+
+
+def _on_sand_change() -> None:
+    _redistribute_soil("_soil_sand")
+
+
+def _on_silt_change() -> None:
+    _redistribute_soil("_soil_silt")
+
+
+# ─────────────────────────────────────────────────────────────
 # Session state initialisation
 # ─────────────────────────────────────────────────────────────
 
@@ -444,6 +476,8 @@ def _init_session_state() -> None:
         "_last_payload_hash": None,
         "_prev_live_mode": False,
         "_soil_clay": 35.0,
+        "_soil_sand": 40.0,
+        "_soil_silt": 25.0,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -597,22 +631,45 @@ class PremiumBiomassApp:
                     "Clay (%)", 0.0, 100.0,
                     step=0.5,
                     key="_soil_clay",
+                    on_change=_on_clay_change,
                     help="Percentage of clay particles in the topsoil. "
                          "Higher clay increases water retention and "
                          "waterlogging risk.",
                 )
                 sand = st.slider(
-                    "Sand (%)", 0.0, 100.0, 25.0, 0.5,
+                    "Sand (%)", 0.0, 100.0,
+                    step=0.5,
+                    key="_soil_sand",
+                    on_change=_on_sand_change,
                     help="Percentage of sand in the topsoil. "
                          "Sandy soils drain quickly and retain fewer "
                          "nutrients.",
                 )
                 silt = st.slider(
-                    "Silt (%)", 0.0, 100.0, 40.0, 0.5,
+                    "Silt (%)", 0.0, 100.0,
+                    step=0.5,
+                    key="_soil_silt",
+                    on_change=_on_silt_change,
                     help="Percentage of silt in the topsoil. "
                          "Silt contributes to fertility and moderate "
                          "drainage.",
                 )
+                _soil_total = round(
+                    st.session_state["_soil_clay"]
+                    + st.session_state["_soil_sand"]
+                    + st.session_state["_soil_silt"]
+                )
+                if _soil_total == 100:
+                    st.caption(
+                        "<span style='color:#10B981'>Total: 100%</span>",
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    st.caption(
+                        f"<span style='color:#F59E0B'>"
+                        f"Total: {_soil_total}% ⚠️</span>",
+                        unsafe_allow_html=True,
+                    )
 
             with st.expander("Hydrology & Topography", expanded=True):
                 elev_default = float(telem.get("elev", 12.0))
@@ -1517,7 +1574,10 @@ class PremiumBiomassApp:
             )
 
         with col_diagram:
-            # Sankey — CVD-safe colours, black labels, fixed overlap
+            # Sankey — fixed arrangement so x/y coords are honoured exactly.
+            # Link values are kept uniform (all 1) for feature→model and
+            # model→ridge so no node inflates; ridge→AGB uses 3 to match
+            # ridge's total inflow and keep both terminal nodes the same size.
             rf_rgba = hex_to_rgba(COLORS["RF"], 0.12)
             xgb_rgba = hex_to_rgba(COLORS["XGB"], 0.12)
             svr_rgba = hex_to_rgba(COLORS["SVR"], 0.12)
@@ -1538,31 +1598,34 @@ class PremiumBiomassApp:
                         "Random Forest",           # 5
                         "XGBoost",                 # 6
                         "SVR",                     # 7
-                        "Ridge Meta-Model",        # 8
-                        "AGB  Mg/ha",              # 9
+                        "Meta: Ridge Regression",  # 8
+                        "AGB (Mg/ha)",             # 9
                     ],
                     x=[0.01, 0.01, 0.01, 0.01, 0.01,
-                       0.30, 0.30, 0.30,
-                       0.62, 0.95],
-                    y=[0.08, 0.27, 0.46, 0.65, 0.84,
-                       0.12, 0.50, 0.88,
+                       0.35, 0.35, 0.35,
+                       0.68, 0.99],
+                    y=[0.10, 0.28, 0.46, 0.64, 0.82,
+                       0.15, 0.50, 0.85,
                        0.50, 0.50],
                     color=[
-                        "#F3F4F6", "#F3F4F6", "#F3F4F6",
-                        "#F3F4F6", "#F3F4F6",
-                        hex_to_rgba(COLORS["RF"], 0.18),
-                        hex_to_rgba(COLORS["XGB"], 0.18),
-                        hex_to_rgba(COLORS["SVR"], 0.18),
-                        hex_to_rgba(COLORS["Stacked"], 0.18),
-                        "#F3F4F6",
+                        "rgba(180, 200, 230, 0.85)",       # 0 feature
+                        "rgba(180, 200, 230, 0.85)",       # 1 feature
+                        "rgba(180, 200, 230, 0.85)",       # 2 feature
+                        "rgba(180, 200, 230, 0.85)",       # 3 feature
+                        "rgba(180, 200, 230, 0.85)",       # 4 feature
+                        hex_to_rgba(COLORS["RF"], 0.18),   # 5 RF
+                        hex_to_rgba(COLORS["XGB"], 0.18),  # 6 XGB
+                        hex_to_rgba(COLORS["SVR"], 0.18),  # 7 SVR
+                        "rgba(120, 185, 155, 0.9)",        # 8 meta-model
+                        "rgba(90, 160, 130, 0.95)",        # 9 output
                     ],
                     line=dict(color="#E5E7EB", width=1),
-                    pad=40,
-                    thickness=16,
+                    pad=20,
+                    thickness=18,
                 ),
                 textfont=dict(
-                    family="Inter, sans-serif",
-                    size=12,
+                    family="Arial",
+                    size=13,
                     color="#000000",
                 ),
                 link=dict(
@@ -1578,11 +1641,14 @@ class PremiumBiomassApp:
                         8, 8, 8,
                         9,
                     ],
+                    # All feature→model and model→ridge links are value=1 so
+                    # no base model or meta node balloons. Ridge→AGB is 3 to
+                    # match Ridge's inflow (3×1) and keep terminal nodes equal.
                     value=[
                         1, 1, 1, 1, 1, 1, 1, 1, 1,
                         1, 1, 1, 1, 1, 1,
-                        3, 3, 3,
-                        9,
+                        1, 1, 1,
+                        3,
                     ],
                     color=[
                         rf_rgba, xgb_rgba, svr_rgba,
@@ -1598,12 +1664,12 @@ class PremiumBiomassApp:
             fig.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)",
                 font=dict(
-                    family="Inter, sans-serif",
-                    size=11,
+                    family="Arial",
+                    size=13,
                     color="#111827",
                 ),
-                margin=dict(t=10, b=10, l=10, r=30),
-                height=420,
+                margin=dict(l=20, r=20, t=30, b=20),
+                height=600,
             )
             st.plotly_chart(
                 fig, width='stretch',
