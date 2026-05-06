@@ -1598,8 +1598,8 @@ class PremiumBiomassApp:
                         "Random Forest",           # 5
                         "XGBoost",                 # 6
                         "SVR",                     # 7
-                        "Ridge Meta-Model",        # 8
-                        "AGB (Mg/ha)",             # 9
+                        "Ridge Regression Meta",   # 8
+                        "",                        # 9 — label removed, hover retained
                     ],
                     x=[0.01, 0.01, 0.01, 0.01, 0.01,
                        0.38, 0.38, 0.38,
