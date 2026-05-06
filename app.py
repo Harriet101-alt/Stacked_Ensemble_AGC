@@ -1598,14 +1598,14 @@ class PremiumBiomassApp:
                         "Random Forest",           # 5
                         "XGBoost",                 # 6
                         "SVR",                     # 7
-                        "Meta: Ridge Regression",  # 8
+                        "Ridge Meta-Model",        # 8
                         "AGB (Mg/ha)",             # 9
                     ],
                     x=[0.01, 0.01, 0.01, 0.01, 0.01,
-                       0.35, 0.35, 0.35,
-                       0.68, 0.99],
-                    y=[0.10, 0.28, 0.46, 0.64, 0.82,
-                       0.15, 0.50, 0.85,
+                       0.38, 0.38, 0.38,
+                       0.68, 0.92],
+                    y=[0.10, 0.25, 0.44, 0.62, 0.80,
+                       0.12, 0.50, 0.88,
                        0.50, 0.50],
                     color=[
                         "rgba(180, 200, 230, 0.85)",       # 0 feature
@@ -1620,7 +1620,7 @@ class PremiumBiomassApp:
                         "rgba(90, 160, 130, 0.95)",        # 9 output
                     ],
                     line=dict(color="#E5E7EB", width=1),
-                    pad=20,
+                    pad=35,
                     thickness=18,
                 ),
                 textfont=dict(
@@ -1669,7 +1669,7 @@ class PremiumBiomassApp:
                     color="#111827",
                 ),
                 margin=dict(l=20, r=20, t=30, b=20),
-                height=600,
+                height=650,
             )
             st.plotly_chart(
                 fig, width='stretch',
