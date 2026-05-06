@@ -1616,7 +1616,7 @@ class PremiumBiomassApp:
                         hex_to_rgba(COLORS["RF"], 0.18),   # 5 RF
                         hex_to_rgba(COLORS["XGB"], 0.18),  # 6 XGB
                         hex_to_rgba(COLORS["SVR"], 0.18),  # 7 SVR
-                        "rgba(120, 185, 155, 0.9)",        # 8 meta-model
+                        "rgba(120, 185, 155, 0.35)",       # 8 meta-model
                         "rgba(90, 160, 130, 0.95)",        # 9 output
                     ],
                     line=dict(color="#E5E7EB", width=1),
